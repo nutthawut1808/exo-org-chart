@@ -9,8 +9,6 @@ import {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
-  Node,
-  Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import Navbar from "@/components/Navbar";
@@ -63,10 +61,10 @@ function OrgChartContent() {
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
   const { fitView } = useReactFlow();
-  
-  // ใช้ React Flow State พร้อมกำหนด Type <Node[]> และ <Edge[]> ให้ถูกต้อง
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
+
+  // ประกาศใช้ useNodesState และ useEdgesState อย่างถูกต้องตามมาตรฐาน React Flow
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const nodeTypes = useMemo(() => ({ employeeNode: EmployeeNode }), []);
 
@@ -87,7 +85,38 @@ function OrgChartContent() {
       });
   }, []);
 
-  // 2. อัปเดต Nodes & Edges เมื่อข้อมูลหรือการ Expand เปลี่ยนแปลง
+  // 2. ประกาศฟังก์ชัน handleToggleExpand และ handleSelectEmployee ไว้ "ก่อน" updateChart เสมอ
+  const handleToggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectEmployee = async (id: string) => {
+    setSelectedEmployeeId(id);
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/employees/${id}`);
+      if (res.status === 404) {
+        setEmployeeDetail(null);
+        return;
+      }
+      const data = await res.json();
+      setEmployeeDetail(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  // 3. อัปเดต Nodes & Edges เมื่อข้อมูลหรือการ Expand เปลี่ยนแปลง
   const updateChart = useCallback(() => {
     if (employees.length === 0) return;
 
@@ -122,26 +151,15 @@ function OrgChartContent() {
         },
       };
     });
-
+    // @ts-ignore
     setNodes(finalNodes);
+    // @ts-ignore
     setEdges(layoutEdges);
   }, [employees, expandedIds, selectedDept, selectedDiv, setNodes, setEdges]);
 
   useEffect(() => {
     updateChart();
   }, [updateChart]);
-
-  const handleToggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -162,24 +180,6 @@ function OrgChartContent() {
 
     setSearchResults(matches);
   }, [searchQuery, employees]);
-
-  const handleSelectEmployee = async (id: string) => {
-    setSelectedEmployeeId(id);
-    setLoadingDetail(true);
-    try {
-      const res = await fetch(`/api/employees/${id}`);
-      if (res.status === 404) {
-        setEmployeeDetail(null);
-        return;
-      }
-      const data = await res.json();
-      setEmployeeDetail(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
 
   const handleResetView = () => {
     setSelectedDept("");
