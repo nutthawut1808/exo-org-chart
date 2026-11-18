@@ -9,6 +9,8 @@ import {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
+  Node,
+  Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import Navbar from "@/components/Navbar";
@@ -61,8 +63,10 @@ function OrgChartContent() {
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
   const { fitView } = useReactFlow();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  
+  // ใช้ React Flow State พร้อมกำหนด Type <Node[]> และ <Edge[]> ให้ถูกต้อง
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
 
   const nodeTypes = useMemo(() => ({ employeeNode: EmployeeNode }), []);
 
@@ -87,7 +91,6 @@ function OrgChartContent() {
   const updateChart = useCallback(() => {
     if (employees.length === 0) return;
 
-    // กรองตาม Department / Division ถ้ามีการเลือก
     let filtered = employees;
     if (selectedDept) {
       filtered = filtered.filter((e) => e.department === selectedDept);
@@ -96,13 +99,11 @@ function OrgChartContent() {
       filtered = filtered.filter((e) => e.division === selectedDiv);
     }
 
-    // สร้าง Layout ด้วย Dagre
     const { nodes: layoutNodes, edges: layoutEdges } = getLayoutedElements(
       employees,
       expandedIds
     );
 
-    // ถ้ามีการกรอง ให้ไฮไลต์หรือกรองโหนด
     const finalNodes = layoutNodes.map((node) => {
       const empData = node.data as any;
       const isMatch =
@@ -117,20 +118,19 @@ function OrgChartContent() {
           onSelectEmployee: handleSelectEmployee,
         },
         style: {
-          opacity: isMatch ? 1 : 0.4, // หรี่แสงโหนดที่ไม่ได้อยู่ในฟิลเตอร์เพื่อรักษาบริบท Path
+          opacity: isMatch ? 1 : 0.4,
         },
       };
     });
 
     setNodes(finalNodes);
     setEdges(layoutEdges);
-  }, [employees, expandedIds, selectedDept, selectedDiv]);
+  }, [employees, expandedIds, selectedDept, selectedDiv, setNodes, setEdges]);
 
   useEffect(() => {
     updateChart();
   }, [updateChart]);
 
-  // Handle Expand / Collapse
   const handleToggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -143,7 +143,6 @@ function OrgChartContent() {
     });
   };
 
-  // Handle Search Input
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -159,12 +158,11 @@ function OrgChartContent() {
           e.name.toLowerCase().includes(query) ||
           e.job_title.toLowerCase().includes(query)
       )
-      .slice(0, 10); // แสดงสูงสุด 10 ผลลัพธ์
+      .slice(0, 10);
 
     setSearchResults(matches);
   }, [searchQuery, employees]);
 
-  // Handle Select Employee Details
   const handleSelectEmployee = async (id: string) => {
     setSelectedEmployeeId(id);
     setLoadingDetail(true);
@@ -183,7 +181,6 @@ function OrgChartContent() {
     }
   };
 
-  // Reset View Controls
   const handleResetView = () => {
     setSelectedDept("");
     setSelectedDiv("");
@@ -229,10 +226,8 @@ function OrgChartContent() {
     <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
       <Navbar />
 
-      {/* Control Bar: Search, Filters, Reset */}
       <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-4 z-10 shadow-md">
         <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Search Box */}
           <div className="relative min-w-[260px] flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -265,7 +260,6 @@ function OrgChartContent() {
             )}
           </div>
 
-          {/* Department Filter */}
           <select
             value={selectedDept}
             onChange={(e) => {
@@ -282,7 +276,6 @@ function OrgChartContent() {
             ))}
           </select>
 
-          {/* Division Filter */}
           <select
             value={selectedDiv}
             onChange={(e) => setSelectedDiv(e.target.value)}
@@ -311,7 +304,6 @@ function OrgChartContent() {
           )}
         </div>
 
-        {/* Reset View Button */}
         <button
           onClick={handleResetView}
           className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium py-2 px-3 rounded-xl border border-slate-700 transition-colors"
@@ -320,7 +312,6 @@ function OrgChartContent() {
         </button>
       </div>
 
-      {/* Main Org Chart Canvas */}
       <div className="flex-1 relative w-full h-[calc(100vh-130px)]">
         <ReactFlow
           nodes={nodes}
@@ -338,7 +329,6 @@ function OrgChartContent() {
         </ReactFlow>
       </div>
 
-      {/* Employee Detail Side Panel */}
       {selectedEmployeeId && (
         <div className="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">

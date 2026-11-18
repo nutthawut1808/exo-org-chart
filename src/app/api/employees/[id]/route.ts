@@ -6,6 +6,8 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+
+  const { id } = await params; // ต้อง await ก่อนนำไปใช้งาน
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
