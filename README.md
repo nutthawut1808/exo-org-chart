@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EXO Travel - Organization Chart Mini App (Complete Summary & Submission Guide)
 
-## Getting Started
+A secure, high-performance full-stack web application built for the EXO Travel candidate assignment. It visualizes an organization of 1,000 employees across 6 departments and 11 divisions, providing interactive exploration, instant search, dependent filtering, and detailed employee insights.
 
-First, run the development server:
+---
 
+## 🚀 Tech Stack & Architecture
+
+- **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS, `@xyflow/react` (React Flow)
+- **Backend:** Next.js API Routes (Node.js runtime)
+- **Authentication:** Auth.js (NextAuth v5) with Google OAuth Provider (Stateless JWT session, no database required)
+- **Layout Engine:** `dagre` for automated hierarchical top-down tree calculation
+- **Data Source:** Static JSON dataset (`data/employees.json`) containing exactly 1,000 fictional employee records.
+
+---
+
+## 🛠️ Quick Setup & Installation
+
+### 1. Prerequisites
+- Node.js (v18+ recommended)
+- Google Cloud Console account (for Google OAuth credentials setup)
+
+### 2. Environment Configuration
+Create a `.env` file in your project root:
+```env
+AUTH_SECRET=your_generated_random_secret_string
+GOOGLE_CLIENT_ID=your_google_client_id_from_gcp
+GOOGLE_CLIENT_SECRET=your_google_client_secret_from_gcp
+NEXTAUTH_URL=http://localhost:3000
+```
+*(Ensure `http://localhost:3000/api/auth/callback/google` is added to your Google Cloud Console Authorized redirect URIs).*
+
+### 3. Run Commands
 ```bash
+# Install dependencies
+npm install
+
+# Generate dataset
+npx tsx scripts/generate-employees.ts
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 API Behavior & Endpoints
+- **`GET /api/employees`**: Returns list of employees. Supports query parameters `?q=`, `?department=`, and `?division=`. Protected by authentication middleware.
+- **`GET /api/employees/[id]`**: Returns detailed employee info. Returns HTTP `404` if the employee ID does not exist.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤖 AI Assistance Disclosure
+AI assistance (Gemini) was utilized for drafting the dataset generation script, setting up NextAuth v5 configuration, and integrating React Flow with Dagre tree layout. The codebase has been fully inspected and tested to ensure complete compliance.
