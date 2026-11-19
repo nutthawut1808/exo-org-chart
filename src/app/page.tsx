@@ -17,7 +17,6 @@ import { Employee, EmployeeDetail } from "@/types/employee";
 import { getLayoutedElements } from "@/lib/tree-layout";
 import {
   Search,
-  Filter,
   RotateCcw,
   X,
   Mail,
@@ -25,7 +24,6 @@ import {
   Users,
   UserCheck,
   Building,
-  Briefcase,
   AlertCircle,
 } from "lucide-react";
 
@@ -85,8 +83,8 @@ function OrgChartContent() {
       });
   }, []);
 
-  // 2. ประกาศฟังก์ชัน handleToggleExpand และ handleSelectEmployee ไว้ "ก่อน" updateChart เสมอ
-  const handleToggleExpand = (id: string) => {
+  // Handle Expand / Collapse
+  const handleToggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -96,9 +94,10 @@ function OrgChartContent() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleSelectEmployee = async (id: string) => {
+  // Handle Select Employee Details
+  const handleSelectEmployee = useCallback(async (id: string) => {
     setSelectedEmployeeId(id);
     setLoadingDetail(true);
     try {
@@ -114,19 +113,11 @@ function OrgChartContent() {
     } finally {
       setLoadingDetail(false);
     }
-  };
+  }, []);
 
-  // 3. อัปเดต Nodes & Edges เมื่อข้อมูลหรือการ Expand เปลี่ยนแปลง
+  // 2. อัปเดต Nodes & Edges เมื่อข้อมูลหรือการ Expand เปลี่ยนแปลง
   const updateChart = useCallback(() => {
     if (employees.length === 0) return;
-
-    let filtered = employees;
-    if (selectedDept) {
-      filtered = filtered.filter((e) => e.department === selectedDept);
-    }
-    if (selectedDiv) {
-      filtered = filtered.filter((e) => e.division === selectedDiv);
-    }
 
     const { nodes: layoutNodes, edges: layoutEdges } = getLayoutedElements(
       employees,
@@ -134,7 +125,7 @@ function OrgChartContent() {
     );
 
     const finalNodes = layoutNodes.map((node) => {
-      const empData = node.data as any;
+      const empData = node.data as Record<string, unknown>;
       const isMatch =
         (!selectedDept || empData.department === selectedDept) &&
         (!selectedDiv || empData.division === selectedDiv);
@@ -151,11 +142,21 @@ function OrgChartContent() {
         },
       };
     });
-    // @ts-ignore
+
+    // @ts-expect-error React Flow state typing alignment
     setNodes(finalNodes);
-    // @ts-ignore
+    // @ts-expect-error React Flow state typing alignment
     setEdges(layoutEdges);
-  }, [employees, expandedIds, selectedDept, selectedDiv, setNodes, setEdges]);
+  }, [
+    employees,
+    expandedIds,
+    selectedDept,
+    selectedDiv,
+    handleToggleExpand,
+    handleSelectEmployee,
+    setNodes,
+    setEdges,
+  ]);
 
   useEffect(() => {
     updateChart();
@@ -223,10 +224,10 @@ function OrgChartContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
+    <div className="h-screen overflow-hidden bg-slate-950 flex flex-col text-slate-100">
       <Navbar />
 
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-4 z-10 shadow-md">
+      <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-4 z-10 shadow-md shrink-0">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           <div className="relative min-w-[260px] flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -312,7 +313,7 @@ function OrgChartContent() {
         </button>
       </div>
 
-      <div className="flex-1 relative w-full h-[calc(100vh-130px)]">
+      <div className="flex-1 min-h-0 relative w-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}
